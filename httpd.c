@@ -78,7 +78,13 @@ void accept_request(void *arg)
 
     if (strcasecmp(method, "GET") && strcasecmp(method, "POST"))
     {
+        //TODO: 为何发送发送报文之前需要把接收缓冲区中的数据接收掉？
+        while ((numchars > 0) && strcmp("\n", buf))  /* read & discard headers */
+        {
+            numchars = get_line(client, buf, sizeof(buf));
+        }
         unimplemented(client);
+        close(client);
         return;
     }
 
@@ -111,9 +117,13 @@ void accept_request(void *arg)
     sprintf(path, "htdocs%s", url);
     if (path[strlen(path) - 1] == '/')
         strcat(path, "index.html");
-    if (stat(path, &st) == -1) {
+    if (stat(path, &st) == -1)
+    {
+        //TODO: 为何发送发送报文之前需要把接收缓冲区中的数据接收掉？
         while ((numchars > 0) && strcmp("\n", buf))  /* read & discard headers */
+        {
             numchars = get_line(client, buf, sizeof(buf));
+        }
         not_found(client);
     }
     else
@@ -500,9 +510,7 @@ int main(void)
 
     while (1)
     {
-        client_sock = accept(server_sock,
-                (struct sockaddr *)&client_name,
-                &client_name_len);
+        client_sock = accept(server_sock, (struct sockaddr *)&client_name, &client_name_len);
         if (client_sock == -1)
             error_die("accept");
         /* accept_request(&client_sock); */
